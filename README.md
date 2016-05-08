@@ -15,6 +15,8 @@ OS X OpenGL context
 
 Linux?
 
+WebGL?
+
 ###Maybe:
 
 Cross platform audio
