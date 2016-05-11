@@ -40,7 +40,7 @@ namespace Cross_Platform_OpenGL.iOS
             var view = (GLKView)View;
             view.Context = context;
             view.DrawableDepthFormat = GLKViewDrawableDepthFormat.Format24;
-
+            
             SetupGL();
         }
 

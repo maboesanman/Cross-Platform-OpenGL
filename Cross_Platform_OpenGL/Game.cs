@@ -6,12 +6,17 @@ using System.IO;
 using OpenTK.Graphics.ES20;
 using OpenTK;
 
+#if __ANDROID__
+using OpenTK.Platform;
+using Android.Opengl;
+#endif
+
 namespace Cross_Platform_OpenGL
 {
     class Game
     {
         #region openGL variables
-
+        
         enum Uniform
         {
             ModelViewProjection_Matrix,
@@ -77,7 +82,6 @@ namespace Cross_Platform_OpenGL
         };
 
         int program;
-
         Matrix4 modelViewProjectionMatrix;
         Matrix3 normalMatrix;
         float rotation;
@@ -100,22 +104,21 @@ namespace Cross_Platform_OpenGL
         public void SetupGL()
         {
             LoadShaders(out program);
+            GL.Enable(EnableCap.DepthTest);
 
-            OpenTK.Graphics.ES20.GL.Enable(EnableCap.DepthTest);
+            GL.Oes.GenVertexArrays(1, out vertexArray);
+            GL.Oes.BindVertexArray(vertexArray);
+            GLES20.GlBindBuffer(GLES20.GlArrayBuffer, vertexBuffer);
+            GL.GenBuffers(1, out vertexBuffer);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBuffer);
+            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(cubeVertexData.Length * sizeof(float)), cubeVertexData, BufferUsage.StaticDraw);
 
-            OpenTK.Graphics.ES20.GL.Oes.GenVertexArrays(1, out vertexArray);
-            OpenTK.Graphics.ES20.GL.Oes.BindVertexArray(vertexArray);
-
-            OpenTK.Graphics.ES20.GL.GenBuffers(1, out vertexBuffer);
-            OpenTK.Graphics.ES20.GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBuffer);
-            OpenTK.Graphics.ES20.GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(cubeVertexData.Length * sizeof(float)), cubeVertexData, BufferUsage.StaticDraw);
-
-            OpenTK.Graphics.ES20.GL.EnableVertexAttribArray(0);//this may break on android
-            OpenTK.Graphics.ES20.GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 24, new IntPtr(0));
-            OpenTK.Graphics.ES20.GL.EnableVertexAttribArray(1);
-            OpenTK.Graphics.ES20.GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 24, new IntPtr(12));
-
-            OpenTK.Graphics.ES20.GL.Oes.BindVertexArray(0);
+            GL.EnableVertexAttribArray(0);//this may break on android
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 24, new IntPtr(0));
+            GL.EnableVertexAttribArray(1);
+            GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 24, new IntPtr(12));
+            
+            GL.Oes.BindVertexArray(0);
         }
         public void Update(float aspect)
         {
@@ -138,18 +141,17 @@ namespace Cross_Platform_OpenGL
         public void Draw(float width, float height)
         {
 
-            OpenTK.Graphics.ES20.GL.ClearColor(0.65f, 0.65f, 0.65f, 1.0f);
-            OpenTK.Graphics.ES20.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            OpenTK.Graphics.ES20.GL.Oes.BindVertexArray(vertexArray);
+            GL.ClearColor(0.65f, 0.65f, 0.65f, 1.0f);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            GL.Oes.BindVertexArray(vertexArray);
 
             // Render the object
-            OpenTK.Graphics.ES20.GL.UseProgram(program);
+            GL.UseProgram(program);
 
-            OpenTK.Graphics.ES20.GL.UniformMatrix4(uniforms[(int)Uniform.ModelViewProjection_Matrix], false, ref modelViewProjectionMatrix);
-            OpenTK.Graphics.ES20.GL.UniformMatrix3(uniforms[(int)Uniform.Normal_Matrix], false, ref normalMatrix);
+            GL.UniformMatrix4(uniforms[(int)Uniform.ModelViewProjection_Matrix], false, ref modelViewProjectionMatrix);
+            GL.UniformMatrix3(uniforms[(int)Uniform.Normal_Matrix], false, ref normalMatrix);
 
-            OpenTK.Graphics.ES20.GL.DrawArrays(BeginMode.Triangles, 0, 36);
+            GL.DrawArrays(BeginMode.Triangles, 0, 36);
         }
         public void TearDown()
         {
@@ -157,12 +159,13 @@ namespace Cross_Platform_OpenGL
         }
         public void TearDownGL()
         {
-            OpenTK.Graphics.ES20.GL.DeleteBuffers(1, ref vertexBuffer);
-            OpenTK.Graphics.ES20.GL.Oes.DeleteVertexArrays(1, ref vertexArray);
+            GL.DeleteBuffers(1, ref vertexBuffer);
+            
+            GL.Oes.DeleteVertexArrays(1, ref vertexArray);
             
             if (program > 0)
             {
-                OpenTK.Graphics.ES20.GL.DeleteProgram(program);
+                GL.DeleteProgram(program);
                 program = 0;
             }
         }
@@ -171,7 +174,7 @@ namespace Cross_Platform_OpenGL
             int vertShader, fragShader;
 
             // Create shader program.
-            program = OpenTK.Graphics.ES20.GL.CreateProgram();
+            program = GL.CreateProgram();
 
             // Create and compile vertex shader.
             if (!CompileShader(ShaderType.VertexShader, Shaders.GetVertexShader(), out vertShader))
@@ -187,15 +190,15 @@ namespace Cross_Platform_OpenGL
             }
 
             // Attach vertex shader to program.
-            OpenTK.Graphics.ES20.GL.AttachShader(program, vertShader);
+            GL.AttachShader(program, vertShader);
 
             // Attach fragment shader to program.
-            OpenTK.Graphics.ES20.GL.AttachShader(program, fragShader);
+            GL.AttachShader(program, fragShader);
 
             // Bind attribute locations.
             // This needs to be done prior to linking.
-            OpenTK.Graphics.ES20.GL.BindAttribLocation(program, 0, "position");
-            OpenTK.Graphics.ES20.GL.BindAttribLocation(program, 1, "normal");
+            GL.BindAttribLocation(program, 0, "position");
+            GL.BindAttribLocation(program, 1, "normal");
               
             // Link program.
             if (!LinkProgram(program))
@@ -203,57 +206,57 @@ namespace Cross_Platform_OpenGL
                 Console.WriteLine("Failed to link program: {0:x}", program);
 
                 if (vertShader != 0)
-                    OpenTK.Graphics.ES20.GL.DeleteShader(vertShader);
+                    GL.DeleteShader(vertShader);
 
                 if (fragShader != 0)
-                    OpenTK.Graphics.ES20.GL.DeleteShader(fragShader);
+                    GL.DeleteShader(fragShader);
 
                 if (program != 0)
                 {
-                    OpenTK.Graphics.ES20.GL.DeleteProgram(program);
+                    GL.DeleteProgram(program);
                     program = 0;
                 }
                 return false;
             }
             // Get uniform locations.
-            uniforms[(int)Uniform.ModelViewProjection_Matrix] = OpenTK.Graphics.ES20.GL.GetUniformLocation(program, "modelViewProjectionMatrix");
-            uniforms[(int)Uniform.Normal_Matrix] = OpenTK.Graphics.ES20.GL.GetUniformLocation(program, "normalMatrix");
+            uniforms[(int)Uniform.ModelViewProjection_Matrix] = GL.GetUniformLocation(program, "modelViewProjectionMatrix");
+            uniforms[(int)Uniform.Normal_Matrix] = GL.GetUniformLocation(program, "normalMatrix");
 
             // Release vertex and fragment shaders.
             if (vertShader != 0)
             {
-                OpenTK.Graphics.ES20.GL.DetachShader(program, vertShader);
-                OpenTK.Graphics.ES20.GL.DeleteShader(vertShader);
+                GL.DetachShader(program, vertShader);
+                GL.DeleteShader(vertShader);
             }
 
             if (fragShader != 0)
             {
-                OpenTK.Graphics.ES20.GL.DetachShader(program, fragShader);
-                OpenTK.Graphics.ES20.GL.DeleteShader(fragShader);
+                GL.DetachShader(program, fragShader);
+                GL.DeleteShader(fragShader);
             }
 
             return true;
         }
         bool CompileShader(ShaderType type, string src, out int shader)
         {
-            shader = OpenTK.Graphics.ES20.GL.CreateShader(type);
-            OpenTK.Graphics.ES20.GL.ShaderSource(shader, src);
-            OpenTK.Graphics.ES20.GL.CompileShader(shader);
+            shader = GL.CreateShader(type);
+            GL.ShaderSource(shader, src);
+            GL.CompileShader(shader);
 
 #if DEBUG
             int logLength = 0;
-            OpenTK.Graphics.ES20.GL.GetShader(shader, ShaderParameter.InfoLogLength, out logLength);
+            GL.GetShader(shader, ShaderParameter.InfoLogLength, out logLength);
             if (logLength > 0)
             {
-                Console.WriteLine("Shader compile log:\n{0}", OpenTK.Graphics.ES20.GL.GetShaderInfoLog(shader));
+                Console.WriteLine("Shader compile log:\n{0}", GL.GetShaderInfoLog(shader));
             }
 #endif
 
             int status = 0;
-            OpenTK.Graphics.ES20.GL.GetShader(shader, ShaderParameter.CompileStatus, out status);
+            GL.GetShader(shader, ShaderParameter.CompileStatus, out status);
             if (status == 0)
             {
-                OpenTK.Graphics.ES20.GL.DeleteShader(shader);
+                GL.DeleteShader(shader);
                 return false;
             }
 
@@ -262,16 +265,16 @@ namespace Cross_Platform_OpenGL
 
         bool LinkProgram(int prog)
         {
-            OpenTK.Graphics.ES20.GL.LinkProgram(prog);
+            GL.LinkProgram(prog);
 
 #if DEBUG
             int logLength = 0;
-            OpenTK.Graphics.ES20.GL.GetProgram(prog, ProgramParameter.InfoLogLength, out logLength);
+            GL.GetProgram(prog, ProgramParameter.InfoLogLength, out logLength);
             if (logLength > 0)
-                Console.WriteLine("Program link log:\n{0}", OpenTK.Graphics.ES20.GL.GetProgramInfoLog(prog));
+                Console.WriteLine("Program link log:\n{0}", GL.GetProgramInfoLog(prog));
 #endif
             int status = 0;
-            OpenTK.Graphics.ES20.GL.GetProgram(prog, ProgramParameter.LinkStatus, out status);
+            GL.GetProgram(prog, ProgramParameter.LinkStatus, out status);
             return status != 0;
         }
 
@@ -279,16 +282,16 @@ namespace Cross_Platform_OpenGL
         {
             int logLength, status = 0;
 
-            OpenTK.Graphics.ES20.GL.ValidateProgram(prog);
-            OpenTK.Graphics.ES20.GL.GetProgram(prog, ProgramParameter.InfoLogLength, out logLength);
+            GL.ValidateProgram(prog);
+            GL.GetProgram(prog, ProgramParameter.InfoLogLength, out logLength);
             if (logLength > 0)
             {
                 var log = new System.Text.StringBuilder(logLength);
-                OpenTK.Graphics.ES20.GL.GetProgramInfoLog(prog, logLength, out logLength, log);
+                GL.GetProgramInfoLog(prog, logLength, out logLength, log);
                 Console.WriteLine("Program validate log:\n{0}", log);
             }
 
-            OpenTK.Graphics.ES20.GL.GetProgram(prog, ProgramParameter.LinkStatus, out status);
+            GL.GetProgram(prog, ProgramParameter.LinkStatus, out status);
             return status != 0;
         }
     }

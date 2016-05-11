@@ -39,5 +39,10 @@ namespace Cross_Platform_OpenGL.Windows
             base.OnUpdateFrame(e);
             myGame.Update(Width/Height);
         }
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            GL.Viewport(Size);
+        }
     }
 }
