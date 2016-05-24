@@ -34,7 +34,7 @@ namespace Cross_Platform_OpenGL
         System.Diagnostics.Stopwatch stopwatch;
 
         int[] uniforms = new int[(int)Uniform.Count];
-
+        #region vert data
         float[] cubeVertexData = {
 			// Data layout for each line below is:
 			// positionX, positionY, positionZ,     normalX, normalY, normalZ,
@@ -80,7 +80,7 @@ namespace Cross_Platform_OpenGL
             -0.5f, -0.5f, -0.5f,       0.0f, 0.0f, -1.0f,
             -0.5f, 0.5f, -0.5f,        0.0f, 0.0f, -1.0f
         };
-
+        #endregion
         int program;
         Matrix4 modelViewProjectionMatrix;
         Matrix3 normalMatrix;
@@ -108,7 +108,7 @@ namespace Cross_Platform_OpenGL
 
             GL.Oes.GenVertexArrays(1, out vertexArray);
             GL.Oes.BindVertexArray(vertexArray);
-            GLES20.GlBindBuffer(GLES20.GlArrayBuffer, vertexBuffer);
+            //GLES20.GlBindBuffer(GLES20.GlArrayBuffer, vertexBuffer);
             GL.GenBuffers(1, out vertexBuffer);
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBuffer);
             GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(cubeVertexData.Length * sizeof(float)), cubeVertexData, BufferUsage.StaticDraw);
